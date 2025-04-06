@@ -1,5 +1,5 @@
-import java.util.List;
 import java.util.Scanner;
+import java.util.List;
 
 public class ConsoleUI {
     private Scanner scanner;
@@ -8,89 +8,118 @@ public class ConsoleUI {
     public ConsoleUI(String[] subjects) {
         this.scanner = new Scanner(System.in);
         this.calculator = new GradeCalculator(subjects);
+        System.out.println("Loaded " + calculator.getStudents().size() + " student(s)");
     }
 
-    // Main menu
     public void start() {
         while (true) {
-            System.out.println("\nStudent Grade Calculator");
-            System.out.println("1. Add Student");
-            System.out.println("2. View All Students");
-            System.out.println("3. View Class Stats");
-            System.out.println("4. Save Data");
-            System.out.println("5. Load Data");
-            System.out.println("6. Exit");
-            System.out.print("Choose option: ");
-
+            printMenu();
             int choice = scanner.nextInt();
-            scanner.nextLine(); // consume newline
+            scanner.nextLine(); // Consume newline
 
             switch (choice) {
                 case 1 -> addStudent();
-                case 2 -> viewStudents();
-                case 3 -> viewStats();
-                case 4 -> saveData();
-                case 5 -> loadData();
-                case 6 -> { return; }
-                default -> System.out.println("Invalid choice");
+                case 2 -> viewAllStudents();
+                case 3 -> viewStudentGrades();
+                case 4 -> viewClassStats();
+                case 5 -> {
+                    FileHandler.saveStudents(calculator.getStudents());
+                    System.out.println("Goodbye!");
+                    return;
+                }
+                default -> System.out.println("Invalid choice!");
             }
         }
     }
 
+    private void printMenu() {
+        System.out.println("\nSTUDENT GRADE CALCULATOR");
+        System.out.println("1. Add Student");
+        System.out.println("2. View All Students");
+        System.out.println("3. View Student Grades");
+        System.out.println("4. View Class Stats");
+        System.out.println("5. Exit");
+        System.out.print("Choose option: ");
+    }
+
     private void addStudent() {
-        System.out.print("Enter student name: ");
+        System.out.print("\nEnter student name: ");
         String name = scanner.nextLine();
 
         System.out.print("Enter student ID: ");
         String id = scanner.nextLine();
 
-        Student student = new Student(name, id, calculator.getSubjects());
-        double[] grades = new double[calculator.getSubjects().length];
+        String[] subjects = calculator.getSubjects();
+        double[] grades = new double[subjects.length];
 
-        for (int i = 0; i < grades.length; i++) {
-            System.out.printf("Enter grade for %s: ", calculator.getSubjects()[i]);
-            grades[i] = scanner.nextDouble();
+        System.out.println("Enter grades (0-100):");
+        for (int i = 0; i < subjects.length; i++) {
+            while (true) {
+                System.out.print(subjects[i] + ": ");
+                double grade = scanner.nextDouble();
+                scanner.nextLine();
+
+                if (grade >= 0 && grade <= 100) {
+                    grades[i] = grade;
+                    break;
+                }
+                System.out.println("Invalid! Grade must be 0-100");
+            }
         }
-        scanner.nextLine(); // consume newline
 
-        student.setGrades(grades);
+        Student student = new Student(name, id, subjects, grades);
         calculator.addStudent(student);
-        System.out.println("Student added!");
+        System.out.println("Student added successfully!");
     }
 
-    private void viewStudents() {
+    private void viewAllStudents() {
         List<Student> students = calculator.getStudents();
         if (students.isEmpty()) {
-            System.out.println("No students found");
+            System.out.println("\nNo students found.");
             return;
         }
 
+        System.out.println("\nALL STUDENTS");
+        System.out.println("------------");
         for (Student s : students) {
-            System.out.printf("\n%s (%s) - Average: %.1f - Grade: %s - %s\n",
-                    s.getName(), s.getStudentId(), s.getAverage(),
-                    s.getLetterGrade(), s.isPassed() ? "Passed" : "Failed");
-
-            for (int i = 0; i < s.getSubjects().length; i++) {
-                System.out.printf("  %s: %.1f\n", s.getSubjects()[i], s.getGrades()[i]);
-            }
+            System.out.printf("%s (%s) | Avg: %.2f | Grade: %s | %s\n",
+                    s.getName(), s.getStudentId(), s.calculateAverage(),
+                    s.getLetterGrade(), s.hasPassed() ? "Passed" : "Failed");
         }
     }
 
-    private void viewStats() {
-        System.out.printf("\nClass Average: %.1f\n", calculator.getClassAverage());
-        System.out.printf("Pass Percentage: %.1f%%\n", calculator.getPassPercentage());
+    private void viewStudentGrades() {
+        List<Student> students = calculator.getStudents();
+        if (students.isEmpty()) {
+            System.out.println("\nNo students found.");
+            return;
+        }
+
+        System.out.println("\nSELECT STUDENT");
+        for (int i = 0; i < students.size(); i++) {
+            System.out.printf("%d. %s\n", i+1, students.get(i).getName());
+        }
+
+        System.out.print("\nEnter student number: ");
+        int num = scanner.nextInt();
+        scanner.nextLine();
+
+        if (num < 1 || num > students.size()) {
+            System.out.println("Invalid selection!");
+            return;
+        }
+
+        Student s = students.get(num-1);
+        s.displayGrades();
+        System.out.printf("\nAverage: %.2f | Grade: %s | Status: %s\n",
+                s.calculateAverage(), s.getLetterGrade(), s.hasPassed() ? "Passed" : "Failed");
+    }
+
+    private void viewClassStats() {
+        System.out.println("\nCLASS STATISTICS");
+        System.out.println("---------------");
+        System.out.printf("Average Grade: %.2f\n", calculator.getClassAverage());
+        System.out.printf("Pass Rate: %.1f%%\n", calculator.getPassPercentage());
         System.out.println("Total Students: " + calculator.getStudents().size());
-    }
-
-    private void saveData() {
-        FileHandler.saveStudents("students.dat", calculator.getStudents());
-        System.out.println("Data saved!");
-    }
-
-    private void loadData() {
-        List<Student> loaded = FileHandler.loadStudents("students.dat");
-        calculator = new GradeCalculator(calculator.getSubjects());
-        loaded.forEach(calculator::addStudent);
-        System.out.println("Data loaded!");
     }
 }

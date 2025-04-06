@@ -6,15 +6,14 @@ public class Student implements Serializable, Comparable<Student> {
     private double[] grades;
     private String[] subjects;
 
-    public Student(String name, String studentId, String[] subjects) {
+    public Student(String name, String studentId, String[] subjects, double[] grades) {
         this.name = name;
         this.studentId = studentId;
         this.subjects = subjects;
-        this.grades = new double[subjects.length];
+        this.grades = grades;
     }
 
-    // Calculate average grade
-    public double getAverage() {
+    public double calculateAverage() {
         double sum = 0;
         for (double grade : grades) {
             sum += grade;
@@ -22,14 +21,12 @@ public class Student implements Serializable, Comparable<Student> {
         return sum / grades.length;
     }
 
-    // Check if student passed (average >= 40)
-    public boolean isPassed() {
-        return getAverage() >= 40;
+    public boolean hasPassed() {
+        return calculateAverage() >= 40;
     }
 
-    // Get letter grade based on average
     public String getLetterGrade() {
-        double avg = getAverage();
+        double avg = calculateAverage();
         if (avg >= 90) return "A+";
         if (avg >= 80) return "A";
         if (avg >= 70) return "B";
@@ -39,16 +36,21 @@ public class Student implements Serializable, Comparable<Student> {
         return "F";
     }
 
-    // For sorting students by average (highest first)
-    @Override
-    public int compareTo(Student other) {
-        return Double.compare(other.getAverage(), this.getAverage());
+    public void displayGrades() {
+        System.out.println("\nGrades for " + name + ":");
+        for (int i = 0; i < subjects.length; i++) {
+            System.out.printf("%-10s: %.2f\n", subjects[i], grades[i]);
+        }
     }
 
-    // Getters and setters
+    @Override
+    public int compareTo(Student other) {
+        return Double.compare(other.calculateAverage(), this.calculateAverage());
+    }
+
+    // Getters
     public String getName() { return name; }
     public String getStudentId() { return studentId; }
     public double[] getGrades() { return grades; }
     public String[] getSubjects() { return subjects; }
-    public void setGrades(double[] grades) { this.grades = grades; }
 }
